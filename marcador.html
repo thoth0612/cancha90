@@ -72,16 +72,20 @@
 
 <script>
 const CLAVE = 'cancha90_marcador_v1';
-const DB = 'https://console.firebase.google.com/project/marcador-fe8a8/database/marcador-fe8a8-default-rtdb/data/~2F'/estado.json;
+const DB = 'https://marcador-fe8a8-default-rtdb.firebaseio.com/estado.json';
 const $ = id => document.getElementById(id);
 let ultimo = {gL:null,gV:null};
 
-  let estado = null;
-  function leer(){ return estado; }
-  async function bajar(){
-    try{ const r = await fetch(DB + '?t=' + Date.now()); const j = await r.json(); if(j) estado = j; }catch(_){}
-  }
-  setInterval(bajar, 1000); bajar();
+let estado = null;
+function leer(){ return estado; }
+async function bajar(){
+  try{
+    const r = await fetch(DB + '?t=' + Date.now(), {cache:'no-store'});
+    const j = await r.json();
+    if(j) estado = j;
+  }catch(_){}
+}
+setInterval(bajar, 1000); bajar();
 function segundosActuales(t){
   if(!t) return 0;
   let s = t.base;
