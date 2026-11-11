@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel Marcador Cancha 90</title>
+<style>
+  :root{--rojo:#e10600;--fondo:#16181c;--panel:#1f2228;--borde:#343943;--texto:#f2f3f5;--suave:#9aa0ab}
+  *{box-sizing:border-box}
+  body{margin:0;padding:12px;background:var(--fondo);color:var(--texto);font:14px/1.3 system-ui,Segoe UI,Roboto,sans-serif}
+  h2{font-size:12px;margin:0 0 8px;color:var(--suave);font-weight:600}
+  section{background:var(--panel);border:1px solid var(--borde);border-radius:10px;padding:10px;margin-bottom:10px}
+  label{display:block;font-size:12px;color:var(--suave);margin-bottom:3px}
+  input[type=text],input[type=number]{width:100%;padding:8px;border-radius:6px;border:1px solid var(--borde);background:#101216;color:var(--texto);font-size:14px}
+  input[type=color]{width:44px;height:36px;padding:0;border:1px solid var(--borde);border-radius:6px;background:none;cursor:pointer}
+  input:focus-visible,button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  .fila{display:flex;gap:8px;align-items:flex-end}
+  .fila > *{flex:1}
+  .fila > .fijo{flex:none}
+  button{cursor:pointer;border:1px solid var(--borde);background:#2a2e36;color:var(--texto);border-radius:6px;padding:8px 10px;font-size:14px}
+  button:hover{background:#343943}
+  button.rojo{background:var(--rojo);border-color:var(--rojo);font-weight:700}
+  button.rojo:hover{background:#ff1a12}
+  .eq{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .golesbox{display:flex;align-items:center;gap:6px;margin-top:8px}
+  .golesbox .n{flex:1;text-align:center;font-size:30px;font-weight:800}
+  .golesbox button{width:44px;height:40px;font-size:20px;flex:none}
+  .rapidos{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .rapidos button{padding:5px 8px;font-size:12px}
+  .reloj{font-size:34px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;margin-bottom:8px}
+  .mini{font-size:12px;color:var(--suave);margin-top:6px}
+</style>
+</head>
+<body>
+
+<section>
+  <h2>Torneo y tiempo de juego</h2>
+  <label for="torneo">Nombre del torneo</label>
+  <input type="text" id="torneo" value="Liga">
+  <label for="fase" style="margin-top:8px">Tiempo que se está jugando</label>
+  <input type="text" id="fase" value="1er tiempo">
+  <div class="rapidos" id="rapidosFase">
+    <button data-f="1er tiempo">1er tiempo</button>
+    <button data-f="Medio tiempo">Medio tiempo</button>
+    <button data-f="2do tiempo">2do tiempo</button>
+    <button data-f="Final">Final</button>
+    <button data-f="Penales">Penales</button>
+  </div>
+</section>
+
+<section>
+  <h2>Equipos y marcador</h2>
+  <div class="eq">
+    <div>
+      <label for="nL">Local</label>
+      <div class="fila"><input type="text" id="nL" value="Local"><input class="fijo" type="color" id="cL" value="#d00000" title="Color de playera local" style="flex:none"></div>
+      <div class="golesbox"><button id="lMenos" aria-label="Quitar gol local">−</button><div class="n" id="gL">0</div><button id="lMas" aria-label="Sumar gol local">+</button></div>
+    </div>
+    <div>
+      <label for="nV">Visita</label>
+      <div class="fila"><input type="text" id="nV" value="Visita"><input class="fijo" type="color" id="cV" value="#1e63ff" title="Color de playera visita" style="flex:none"></div>
+      <div class="golesbox"><button id="vMenos" aria-label="Quitar gol visita">−</button><div class="n" id="gV">0</div><button id="vMas" aria-label="Sumar gol visita">+</button></div>
+    </div>
+  </div>
+  <div class="fila" style="margin-top:10px">
+    <button id="cambiar">Intercambiar lados</button>
+    <button id="ceroGoles">Marcador a 0-0</button>
+  </div>
+</section>
+
+<section>
+  <h2>Reloj</h2>
+  <div class="reloj" id="relojVista">00:00</div>
+  <div class="fila">
+    <button class="rojo" id="inicio">Iniciar</button>
+    <button id="pausa">Pausar</button>
+    <button id="reinicio">A 00:00</button>
+  </div>
+  <div class="fila" style="margin-top:8px">
+    <div><label for="min">Minutos</label><input type="number" id="min" min="0" max="999" value="0"></div>
+    <div><label for="seg">Segundos</label><input type="number" id="seg" min="0" max="59" value="0"></div>
+    <button class="fijo" id="poner">Poner tiempo</button>
+  </div>
+  <div class="fila" style="margin-top:8px">
+    <div>
+      <label for="cuenta">Tipo de cuenta</label>
+      <select id="cuenta" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--borde);background:#101216;color:var(--texto)">
+        <option value="progresiva">Progresiva (0 → arriba)</option>
+        <option value="regresiva">Regresiva (baja a 00:00)</option>
+      </select>
+    </div>
+  </div>
+  <p class="mini">Ejemplo para 2.º tiempo de 25 min: escribe 25 en minutos, pulsa «Poner tiempo» y luego «Iniciar».</p>
+</section>
+
+<section>
+  <h2>Visibilidad</h2>
+  <button id="visible" class="rojo" style="width:100%">Mostrar / ocultar marcador</button>
+</section>
+
+<script>
+const CLAVE = 'cancha90_marcador_v1';
+const DB = 'https://console.firebase.google.com/project/marcador-fe8a8/database/marcador-fe8a8-default-rtdb/data/~2F'/estado.json;
+const $ = id => document.getElementById(id);
+
+const porDefecto = () => ({
+  visible:true, torneo:'Liga', fase:'1er tiempo',
+  local:{nombre:'Local',color:'#d00000',goles:0},
+  visita:{nombre:'Visita',color:'#1e63ff',goles:0},
+  tiempo:{base:0,corriendo:false,inicio:0,cuenta:'progresiva'}
+});
+
+let e;
+try{ e = JSON.parse(localStorage.getItem(CLAVE)) }catch(_){}
+if(!e) e = porDefecto();
+
+function guardar(){ localStorage.setItem(CLAVE, JSON.stringify(e)); }
+
+function segundos(){
+  const t = e.tiempo; let s = t.base;
+  if(t.corriendo){
+    const d = (Date.now() - t.inicio)/1000;
+    s = t.cuenta === 'regresiva' ? t.base - d : t.base + d;
+  }
+  if(t.cuenta === 'regresiva') s = Math.max(0, s);
+  return Math.max(0, Math.floor(s));
+}
+const fmt = s => String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+
+function volcar(){
+  $('torneo').value = e.torneo; $('fase').value = e.fase;
+  $('nL').value = e.local.nombre; $('nV').value = e.visita.nombre;
+  $('cL').value = e.local.color; $('cV').value = e.visita.color;
+  $('gL').textContent = e.local.goles; $('gV').textContent = e.visita.goles;
+  $('cuenta').value = e.tiempo.cuenta;
+}
+  volcar();
+  fetch(DB).then(r=>r.json()).then(j=>{ if(j){ e=j; volcar(); } }).catch(()=>{}); 
+  function guardar(){
+    localStorage.setItem(CLAVE, JSON.stringify(e));
+    fetch(DB, {method:'PUT', body:JSON.stringify(e)}).catch(()=>{});
+  }
+
+// Texto y color: se aplican al escribir
+$('torneo').oninput = ev => { e.torneo = ev.target.value; guardar(); };
+$('fase').oninput   = ev => { e.fase = ev.target.value; guardar(); };
+$('nL').oninput = ev => { e.local.nombre = ev.target.value; guardar(); };
+$('nV').oninput = ev => { e.visita.nombre = ev.target.value; guardar(); };
+$('cL').oninput = ev => { e.local.color = ev.target.value; guardar(); };
+$('cV').oninput = ev => { e.visita.color = ev.target.value; guardar(); };
+document.querySelectorAll('#rapidosFase button').forEach(b => b.onclick = () => { e.fase = b.dataset.f; $('fase').value = e.fase; guardar(); });
+
+// Goles
+function goles(eq, d){ e[eq].goles = Math.max(0, e[eq].goles + d); $(eq === 'local' ? 'gL' : 'gV').textContent = e[eq].goles; guardar(); }
+$('lMas').onclick = () => goles('local', 1);   $('lMenos').onclick = () => goles('local', -1);
+$('vMas').onclick = () => goles('visita', 1);  $('vMenos').onclick = () => goles('visita', -1);
+$('ceroGoles').onclick = () => { e.local.goles = 0; e.visita.goles = 0; volcar(); guardar(); };
+$('cambiar').onclick = () => { [e.local, e.visita] = [e.visita, e.local]; volcar(); guardar(); };
+
+// Reloj
+$('inicio').onclick = () => {
+  if(e.tiempo.corriendo) return;
+  e.tiempo.corriendo = true; e.tiempo.inicio = Date.now(); guardar();
+};
+$('pausa').onclick = () => {
+  if(!e.tiempo.corriendo) return;
+  e.tiempo.base = segundos(); e.tiempo.corriendo = false; guardar();
+};
+$('reinicio').onclick = () => { e.tiempo.base = 0; e.tiempo.corriendo = false; guardar(); };
+$('poner').onclick = () => {
+  const m = parseInt($('min').value || 0, 10), s = parseInt($('seg').value || 0, 10);
+  e.tiempo.base = Math.max(0, m*60 + s);
+  if(e.tiempo.corriendo) e.tiempo.inicio = Date.now();
+  guardar();
+};
+$('cuenta').onchange = ev => {
+  const s = segundos();
+  e.tiempo.cuenta = ev.target.value; e.tiempo.base = s;
+  if(e.tiempo.corriendo) e.tiempo.inicio = Date.now();
+  guardar();
+};
+
+$('visible').onclick = () => { e.visible = !e.visible; guardar(); };
+
+setInterval(() => { $('relojVista').textContent = fmt(segundos()); }, 200);
+</script>
+</body>
+</html>
