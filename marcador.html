@@ -53,6 +53,9 @@
   }
   .reloj .fase{font-weight:700;font-size:21px;letter-spacing:1.5px;text-transform:uppercase;line-height:1;white-space:nowrap}
   .reloj .tiempo{font-weight:800;font-size:40px;line-height:1;font-variant-numeric:tabular-nums;margin-top:3px}
+  .reloj.solo .tiempo{display:none}
+  .reloj.solo .fase{font-size:30px}
+
   /* Campeón */
   .camp{position:absolute;left:0;top:0;width:1920px;height:1080px;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .6s ease;overflow:hidden}
   .camp.on{opacity:1}
@@ -203,7 +206,9 @@ function pintar(){
   $('nV').textContent = e.visita.nombre;
   $('cL').style.background = e.local.color;
   $('cV').style.background = e.visita.color;
-  $('fase').textContent = e.fase;
+  const solo = !!(e.medio && e.medio.activo);
+  $('fase').textContent = solo ? ((e.medio.leyenda || '').trim() || e.fase) : e.fase;
+  $('fase').parentElement.classList.toggle('solo', solo);
   $('tiempo').textContent = fmt(segundosActuales(e.tiempo));
   $('wrap').classList.toggle('oculto', !e.visible);
 

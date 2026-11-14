@@ -103,6 +103,14 @@
 </section>
 
 <section>
+  <h2>Medio tiempo (marcador sin reloj)</h2>
+  <button id="medioToggle" style="width:100%">Mostrar solo marcador con leyenda</button>
+  <label for="medioTxt" style="margin-top:8px">Leyenda</label>
+  <input type="text" id="medioTxt" value="Medio tiempo">
+  <p class="mini">Oculta los números del reloj y muestra la leyenda en su lugar. El reloj sigue corriendo por detrás; si no quieres eso, pulsa «Pausar» antes.</p>
+</section>
+
+<section>
   <h2>Penales</h2>
   <button id="penToggle" style="width:100%">Penales: DESACTIVADOS</button>
   <div id="penBox" hidden>
@@ -158,7 +166,8 @@ const porDefecto = () => ({
   visita:{nombre:'Visita',color:'#1e63ff',goles:0},
   tiempo:{base:0,corriendo:false,inicio:0,cuenta:'progresiva'},
   penales:{activo:false,local:[],visita:[]},
-  campeon:{activo:false,equipo:'local',nombre:'',texto:'¡Felicidades campeón!'}
+  campeon:{activo:false,equipo:'local',nombre:'',texto:'¡Felicidades campeón!'},
+  medio:{activo:false,leyenda:'Medio tiempo'}
 });
 
 let e;
@@ -176,6 +185,9 @@ function normalizar(){
   c.equipo = c.equipo || 'local';
   c.nombre = c.nombre || '';
   if(c.texto === undefined) c.texto = '¡Felicidades campeón!';
+  if(!e.medio) e.medio = {};
+  e.medio.activo = !!e.medio.activo;
+  if(e.medio.leyenda === undefined) e.medio.leyenda = 'Medio tiempo';
 }
 normalizar();
 
@@ -204,6 +216,12 @@ function volcar(){
   pintarPen();
   $('campTxt').value = e.campeon.texto; $('campNom').value = e.campeon.nombre;
   pintarCamp();
+  $('medioTxt').value = e.medio.leyenda; pintarMedio();
+}
+function pintarMedio(){
+  const a = e.medio.activo;
+  $('medioToggle').textContent = a ? 'Solo marcador: ACTIVADO (pulsa para volver al reloj)' : 'Mostrar solo marcador con leyenda';
+  $('medioToggle').classList.toggle('activo', a);
 }
 function puntosPen(arr){
   const n = Math.max(5, e.penales.local.length, e.penales.visita.length);
@@ -264,6 +282,10 @@ $('cambiar').onclick = () => {
   if(e.campeon.equipo !== 'otro') e.campeon.equipo = e.campeon.equipo === 'local' ? 'visita' : 'local';
   volcar(); guardar();
 };
+
+// Medio tiempo
+$('medioToggle').onclick = () => { e.medio.activo = !e.medio.activo; pintarMedio(); guardar(); };
+$('medioTxt').oninput = ev => { e.medio.leyenda = ev.target.value; guardar(); };
 
 // Campeón
 $('campToggle').onclick = () => {
