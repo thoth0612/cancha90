@@ -53,6 +53,19 @@
   }
   .reloj .fase{font-weight:700;font-size:21px;letter-spacing:1.5px;text-transform:uppercase;line-height:1;white-space:nowrap}
   .reloj .tiempo{font-weight:800;font-size:40px;line-height:1;font-variant-numeric:tabular-nums;margin-top:3px}
+  /* Penales */
+  .pen{display:none;height:46px;margin-top:4px;background:var(--negro);border-radius:12px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.45);align-items:center}
+  .pen.on{display:grid;animation:entra .35s ease}
+  @keyframes entra{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+  .pen .pl,.pen .pv{display:flex;gap:8px;align-items:center}
+  .pen .pl{justify-content:flex-end;padding-right:14px}
+  .pen .pv{justify-content:flex-start;padding-left:14px}
+  .pen .pc{display:flex;justify-content:center;align-items:center;color:#fff;font-weight:800;font-size:32px;line-height:1;padding-top:2px}
+  .pen .pr{align-self:stretch;display:flex;align-items:center;justify-content:center;background:var(--rojo);color:#fff;font-weight:700;font-size:21px;letter-spacing:1.5px;text-transform:uppercase}
+  .dot{width:26px;height:26px;border-radius:50%;border:3px solid #fff;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:800;line-height:1}
+  .dot.g{background:#2ecc40;border-color:#2ecc40}
+  .dot.f{background:#e10600;border-color:#e10600}
+  @media (prefers-reduced-motion:reduce){.pen.on{animation:none}}
   @media (prefers-reduced-motion:reduce){.gol.pop{animation:none}#wrap{transition:none}}
 </style>
 </head>
@@ -66,6 +79,12 @@
       <div class="goles"><div class="gol" id="gL">0</div><div class="gol" id="gV">0</div></div>
       <div class="equipo visita"><div class="chip" id="cV"></div><div class="nombre" id="nV">Visita</div></div>
       <div class="reloj"><div class="fase" id="fase">1er tiempo</div><div class="tiempo" id="tiempo">00:00</div></div>
+    </div>
+    <div class="pen" id="pen">
+      <div class="pl" id="penL"></div>
+      <div class="pc" id="penS">0 - 0</div>
+      <div class="pv" id="penV"></div>
+      <div class="pr">Penales</div>
     </div>
   </div>
 </div>
@@ -100,6 +119,33 @@ function fmt(s){
   const m = Math.floor(s/60), r = s%60;
   return String(m).padStart(2,'0') + ':' + String(r).padStart(2,'0');
 }
+let penClave = '';
+function puntos(arr,n){
+  let h = '';
+  for(let i=0;i<n;i++){
+    const v = arr[i];
+    h += '<div class="dot' + (v==='G' ? ' g' : v==='F' ? ' f' : '') + '">' + (v==='F' ? '✕' : '') + '</div>';
+  }
+  return h;
+}
+function pintarPenales(e){
+  const p = e.penales || {}, pl = p.local || [], pv = p.visita || [];
+  const on = !!p.activo;
+  $('pen').classList.toggle('on', on);
+  if(!on) return;
+  // alinear las columnas con la barra principal
+  const w = ['.equipo.local','.goles','.equipo.visita','.reloj'].map(s => document.querySelector(s).offsetWidth + 'px').join(' ');
+  $('pen').style.gridTemplateColumns = w;
+  const n = Math.max(5, pl.length, pv.length);
+  const gl = pl.filter(x => x==='G').length, gv = pv.filter(x => x==='G').length;
+  const clave = JSON.stringify([pl,pv,n]);
+  if(clave !== penClave){
+    penClave = clave;
+    $('penL').innerHTML = puntos(pl,n);
+    $('penV').innerHTML = puntos(pv,n);
+  }
+  $('penS').textContent = gl + ' - ' + gv;
+}
 function pop(el){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
 
 function pintar(){
@@ -119,6 +165,7 @@ function pintar(){
   if(ultimo.gV !== null && gv !== ultimo.gV) pop($('gV'));
   $('gL').textContent = gl; $('gV').textContent = gv;
   ultimo = {gL:gl,gV:gv};
+  pintarPenales(e);
 }
 setInterval(pintar, 200);
 pintar();

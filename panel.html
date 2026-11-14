@@ -29,6 +29,15 @@
   .rapidos button{padding:5px 8px;font-size:12px}
   .reloj{font-size:34px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;margin-bottom:8px}
   .mini{font-size:12px;color:var(--suave);margin-top:6px}
+  .penres{text-align:center;font-size:16px;font-weight:700;margin:10px 0 8px}
+  .penres b{font-size:26px;margin:0 6px}
+  .penpts{text-align:center;font-size:22px;letter-spacing:4px;min-height:30px;margin-bottom:6px}
+  .penpts .pg{color:#2ecc40}.penpts .pf{color:#ff4d44}.penpts .pp{color:var(--suave)}
+  button.ok{background:#1f7a33;border-color:#1f7a33;font-weight:700}
+  button.ok:hover{background:#27973f}
+  button.mal{background:#8a1f1a;border-color:#8a1f1a;font-weight:700}
+  button.mal:hover{background:#ab2a24}
+  button.activo{background:var(--rojo);border-color:var(--rojo);font-weight:700}
 </style>
 </head>
 <body>
@@ -94,6 +103,28 @@
 </section>
 
 <section>
+  <h2>Penales</h2>
+  <button id="penToggle" style="width:100%">Penales: DESACTIVADOS</button>
+  <div id="penBox" hidden>
+    <div class="penres"><span id="penNL">Local</span><b id="penGL">0</b>–<b id="penGV">0</b><span id="penNV">Visita</span></div>
+    <div class="eq">
+      <div>
+        <div class="penpts" id="penPL"></div>
+        <div class="fila"><button class="ok" id="plG">⚽ Gol</button><button class="mal" id="plF">✕ Falló</button></div>
+        <button id="plU" style="width:100%;margin-top:6px">Deshacer último</button>
+      </div>
+      <div>
+        <div class="penpts" id="penPV"></div>
+        <div class="fila"><button class="ok" id="pvG">⚽ Gol</button><button class="mal" id="pvF">✕ Falló</button></div>
+        <button id="pvU" style="width:100%;margin-top:6px">Deshacer último</button>
+      </div>
+    </div>
+    <button id="penReset" style="width:100%;margin-top:10px">Reiniciar tanda</button>
+    <p class="mini">Al activar, el marcador muestra una fila de penales debajo de la barra (5 tiros, y crece en muerte súbita).</p>
+  </div>
+</section>
+
+<section>
   <h2>Visibilidad</h2>
   <button id="visible" class="rojo" style="width:100%">Mostrar / ocultar marcador</button>
 </section>
@@ -107,12 +138,21 @@ const porDefecto = () => ({
   visible:true, torneo:'Liga', fase:'1er tiempo',
   local:{nombre:'Local',color:'#d00000',goles:0},
   visita:{nombre:'Visita',color:'#1e63ff',goles:0},
-  tiempo:{base:0,corriendo:false,inicio:0,cuenta:'progresiva'}
+  tiempo:{base:0,corriendo:false,inicio:0,cuenta:'progresiva'},
+  penales:{activo:false,local:[],visita:[]}
 });
 
 let e;
 try{ e = JSON.parse(localStorage.getItem(CLAVE)) }catch(_){}
 if(!e) e = porDefecto();
+// Firebase no guarda listas vacías: se rellenan aquí
+function normalizar(){
+  if(!e.penales) e.penales = {activo:false,local:[],visita:[]};
+  e.penales.activo = !!e.penales.activo;
+  e.penales.local = e.penales.local || [];
+  e.penales.visita = e.penales.visita || [];
+}
+normalizar();
 
 function guardar(){
   localStorage.setItem(CLAVE, JSON.stringify(e));
@@ -136,15 +176,36 @@ function volcar(){
   $('cL').value = e.local.color; $('cV').value = e.visita.color;
   $('gL').textContent = e.local.goles; $('gV').textContent = e.visita.goles;
   $('cuenta').value = e.tiempo.cuenta;
+  pintarPen();
+}
+function puntosPen(arr){
+  const n = Math.max(5, e.penales.local.length, e.penales.visita.length);
+  let h = '';
+  for(let i=0;i<n;i++){
+    const v = arr[i];
+    h += v==='G' ? '<span class="pg" title="Gol">●</span>' : v==='F' ? '<span class="pf" title="Falló">✕</span>' : '<span class="pp">○</span>';
+  }
+  return h;
+}
+function pintarPen(){
+  const p = e.penales, a = p.activo;
+  $('penToggle').textContent = a ? 'Penales: ACTIVADOS (pulsa para desactivar)' : 'Penales: DESACTIVADOS (pulsa para activar)';
+  $('penToggle').classList.toggle('activo', a);
+  $('penBox').hidden = !a;
+  $('penNL').textContent = e.local.nombre; $('penNV').textContent = e.visita.nombre;
+  $('penGL').textContent = p.local.filter(x=>x==='G').length;
+  $('penGV').textContent = p.visita.filter(x=>x==='G').length;
+  $('penPL').innerHTML = puntosPen(p.local);
+  $('penPV').innerHTML = puntosPen(p.visita);
 }
 volcar();
-fetch(DB).then(r=>r.json()).then(j=>{ if(j){ e=j; volcar(); } else { guardar(); } }).catch(()=>{});
+fetch(DB).then(r=>r.json()).then(j=>{ if(j){ e=j; normalizar(); volcar(); } else { guardar(); } }).catch(()=>{});
 
 // Texto y color: se aplican al escribir
 $('torneo').oninput = ev => { e.torneo = ev.target.value; guardar(); };
 $('fase').oninput   = ev => { e.fase = ev.target.value; guardar(); };
-$('nL').oninput = ev => { e.local.nombre = ev.target.value; guardar(); };
-$('nV').oninput = ev => { e.visita.nombre = ev.target.value; guardar(); };
+$('nL').oninput = ev => { e.local.nombre = ev.target.value; pintarPen(); guardar(); };
+$('nV').oninput = ev => { e.visita.nombre = ev.target.value; pintarPen(); guardar(); };
 $('cL').oninput = ev => { e.local.color = ev.target.value; guardar(); };
 $('cV').oninput = ev => { e.visita.color = ev.target.value; guardar(); };
 document.querySelectorAll('#rapidosFase button').forEach(b => b.onclick = () => { e.fase = b.dataset.f; $('fase').value = e.fase; guardar(); });
@@ -154,7 +215,26 @@ function goles(eq, d){ e[eq].goles = Math.max(0, e[eq].goles + d); $(eq === 'loc
 $('lMas').onclick = () => goles('local', 1);   $('lMenos').onclick = () => goles('local', -1);
 $('vMas').onclick = () => goles('visita', 1);  $('vMenos').onclick = () => goles('visita', -1);
 $('ceroGoles').onclick = () => { e.local.goles = 0; e.visita.goles = 0; volcar(); guardar(); };
-$('cambiar').onclick = () => { [e.local, e.visita] = [e.visita, e.local]; volcar(); guardar(); };
+$('cambiar').onclick = () => {
+  [e.local, e.visita] = [e.visita, e.local];
+  [e.penales.local, e.penales.visita] = [e.penales.visita, e.penales.local];
+  volcar(); guardar();
+};
+
+// Penales
+$('penToggle').onclick = () => {
+  e.penales.activo = !e.penales.activo;
+  if(e.penales.activo){ e.fase = 'Penales'; $('fase').value = e.fase; }
+  pintarPen(); guardar();
+};
+function tiro(eq, v){ e.penales[eq].push(v); pintarPen(); guardar(); }
+function deshacer(eq){ e.penales[eq].pop(); pintarPen(); guardar(); }
+$('plG').onclick = () => tiro('local','G');   $('plF').onclick = () => tiro('local','F');   $('plU').onclick = () => deshacer('local');
+$('pvG').onclick = () => tiro('visita','G');  $('pvF').onclick = () => tiro('visita','F');  $('pvU').onclick = () => deshacer('visita');
+$('penReset').onclick = () => {
+  if(!confirm('¿Reiniciar la tanda de penales?')) return;
+  e.penales.local = []; e.penales.visita = []; pintarPen(); guardar();
+};
 
 // Reloj
 $('inicio').onclick = () => {
