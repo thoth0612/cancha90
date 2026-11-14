@@ -103,11 +103,11 @@
 </section>
 
 <section>
-  <h2>Medio tiempo (marcador sin reloj)</h2>
-  <button id="medioToggle" style="width:100%">Mostrar solo marcador con leyenda</button>
-  <label for="medioTxt" style="margin-top:8px">Leyenda</label>
+  <h2>Medio tiempo (recuadro central)</h2>
+  <button id="medioToggle" style="width:100%">Mostrar recuadro de medio tiempo</button>
+  <label for="medioTxt" style="margin-top:8px">Mensaje del recuadro</label>
   <input type="text" id="medioTxt" value="Medio tiempo">
-  <p class="mini">Oculta los números del reloj y muestra la leyenda en su lugar. El reloj sigue corriendo por detrás; si no quieres eso, pulsa «Pausar» antes.</p>
+  <p class="mini">Oculta el marcador principal y muestra al centro un recuadro con el mensaje y el marcador del partido. El reloj sigue corriendo por detrás; pulsa «Pausar» si no quieres que avance.</p>
 </section>
 
 <section>
@@ -220,7 +220,7 @@ function volcar(){
 }
 function pintarMedio(){
   const a = e.medio.activo;
-  $('medioToggle').textContent = a ? 'Solo marcador: ACTIVADO (pulsa para volver al reloj)' : 'Mostrar solo marcador con leyenda';
+  $('medioToggle').textContent = a ? 'Medio tiempo: MOSTRANDO (pulsa para volver al marcador)' : 'Mostrar recuadro de medio tiempo';
   $('medioToggle').classList.toggle('activo', a);
 }
 function puntosPen(arr){

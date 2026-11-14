@@ -53,8 +53,21 @@
   }
   .reloj .fase{font-weight:700;font-size:21px;letter-spacing:1.5px;text-transform:uppercase;line-height:1;white-space:nowrap}
   .reloj .tiempo{font-weight:800;font-size:40px;line-height:1;font-variant-numeric:tabular-nums;margin-top:3px}
-  .reloj.solo .tiempo{display:none}
-  .reloj.solo .fase{font-size:30px}
+  /* Medio tiempo (recuadro central) */
+  .medio{position:absolute;left:0;top:0;width:1920px;height:1080px;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .5s ease}
+  .medio.on{opacity:1}
+  .medio-card{position:relative;overflow:hidden;border-radius:22px;background:var(--negro);box-shadow:0 20px 60px rgba(0,0,0,.6);transform:scale(.85);transition:transform .5s cubic-bezier(.2,1.3,.4,1)}
+  .medio.on .medio-card{transform:scale(1)}
+  .medio-torneo{background:#1b1b1b;color:#bbb;font-weight:700;font-size:28px;letter-spacing:3px;text-transform:uppercase;text-align:center;padding:10px 20px 2px}
+  .medio-msg{background:var(--rojo);color:#fff;font-weight:800;font-size:84px;letter-spacing:4px;text-transform:uppercase;text-align:center;padding:10px 70px 0;line-height:1.2;white-space:nowrap}
+  .medio-fila{display:flex;align-items:stretch;height:150px}
+  .m-eq{display:flex;align-items:center;min-width:520px}
+  .m-eq.loc{justify-content:flex-end}
+  .m-nom{color:#fff;font-weight:800;font-size:84px;text-transform:uppercase;letter-spacing:1px;padding:6px 30px 0;white-space:nowrap;line-height:1}
+  .m-chip{width:26px;align-self:stretch;flex:none;border-left:1px solid rgba(255,255,255,.15);border-right:1px solid rgba(255,255,255,.15)}
+  .m-gol{width:150px;background:#fff;color:var(--negro);font-weight:800;font-size:120px;display:flex;align-items:center;justify-content:center;padding-top:6px}
+  .m-gol + .m-gol{border-left:5px solid var(--negro)}
+  @media (prefers-reduced-motion:reduce){.medio,.medio-card{transition:none}}
 
   /* Campeón */
   .camp{position:absolute;left:0;top:0;width:1920px;height:1080px;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .6s ease;overflow:hidden}
@@ -105,6 +118,18 @@
   </div>
 </div>
 
+<div class="medio" id="medio">
+  <div class="medio-card">
+    <div class="medio-torneo" id="mTorneo"></div>
+    <div class="medio-msg" id="mMsg">Medio tiempo</div>
+    <div class="medio-fila">
+      <div class="m-eq loc"><div class="m-nom" id="mNL"></div><div class="m-chip" id="mCL"></div></div>
+      <div class="m-gol" id="mGL">0</div><div class="m-gol" id="mGV">0</div>
+      <div class="m-eq vis"><div class="m-chip" id="mCV"></div><div class="m-nom" id="mNV"></div></div>
+    </div>
+  </div>
+</div>
+
 <div class="camp" id="camp">
   <div class="confeti" id="confeti"></div>
   <div class="camp-card" id="campCard">
@@ -143,6 +168,16 @@ function segundosActuales(t){
 function fmt(s){
   const m = Math.floor(s/60), r = s%60;
   return String(m).padStart(2,'0') + ':' + String(r).padStart(2,'0');
+}
+function pintarMedio(e){
+  const md = e.medio || {};
+  const on = !!md.activo && !!e.visible;
+  $('medio').classList.toggle('on', on);
+  $('mTorneo').textContent = e.torneo;
+  $('mMsg').textContent = (md.leyenda || '').trim() || 'Medio tiempo';
+  $('mNL').textContent = e.local.nombre; $('mNV').textContent = e.visita.nombre;
+  $('mCL').style.background = e.local.color; $('mCV').style.background = e.visita.color;
+  $('mGL').textContent = e.local.goles; $('mGV').textContent = e.visita.goles;
 }
 let campPrev = false;
 function lanzarConfeti(color){
@@ -207,10 +242,9 @@ function pintar(){
   $('cL').style.background = e.local.color;
   $('cV').style.background = e.visita.color;
   const solo = !!(e.medio && e.medio.activo);
-  $('fase').textContent = solo ? ((e.medio.leyenda || '').trim() || e.fase) : e.fase;
-  $('fase').parentElement.classList.toggle('solo', solo);
+  $('fase').textContent = e.fase;
   $('tiempo').textContent = fmt(segundosActuales(e.tiempo));
-  $('wrap').classList.toggle('oculto', !e.visible);
+  $('wrap').classList.toggle('oculto', !e.visible || solo);
 
   const gl = String(e.local.goles), gv = String(e.visita.goles);
   if(ultimo.gL !== null && gl !== ultimo.gL) pop($('gL'));
@@ -218,6 +252,7 @@ function pintar(){
   $('gL').textContent = gl; $('gV').textContent = gv;
   ultimo = {gL:gl,gV:gv};
   pintarPenales(e);
+  pintarMedio(e);
   pintarCampeon(e);
 }
 setInterval(pintar, 200);
