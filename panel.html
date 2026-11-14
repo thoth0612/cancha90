@@ -125,6 +125,24 @@
 </section>
 
 <section>
+  <h2>Campeón</h2>
+  <button id="campToggle" style="width:100%">Mostrar mensaje de campeón</button>
+  <label for="campEq" style="margin-top:10px">¿Quién es el campeón?</label>
+  <select id="campEq" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--borde);background:#101216;color:var(--texto)">
+    <option value="local">Local</option>
+    <option value="visita">Visita</option>
+    <option value="otro">Otro (escribir nombre)</option>
+  </select>
+  <div id="campOtroBox" hidden>
+    <label for="campNom" style="margin-top:8px">Nombre del campeón</label>
+    <input type="text" id="campNom" placeholder="Nombre del equipo">
+  </div>
+  <label for="campTxt" style="margin-top:8px">Mensaje</label>
+  <input type="text" id="campTxt" value="¡Felicidades campeón!">
+  <p class="mini">Al activarlo, elige solo al ganador por goles o penales (puedes cambiarlo). El mensaje sale al centro de la pantalla con confeti.</p>
+</section>
+
+<section>
   <h2>Visibilidad</h2>
   <button id="visible" class="rojo" style="width:100%">Mostrar / ocultar marcador</button>
 </section>
@@ -139,7 +157,8 @@ const porDefecto = () => ({
   local:{nombre:'Local',color:'#d00000',goles:0},
   visita:{nombre:'Visita',color:'#1e63ff',goles:0},
   tiempo:{base:0,corriendo:false,inicio:0,cuenta:'progresiva'},
-  penales:{activo:false,local:[],visita:[]}
+  penales:{activo:false,local:[],visita:[]},
+  campeon:{activo:false,equipo:'local',nombre:'',texto:'¡Felicidades campeón!'}
 });
 
 let e;
@@ -151,6 +170,12 @@ function normalizar(){
   e.penales.activo = !!e.penales.activo;
   e.penales.local = e.penales.local || [];
   e.penales.visita = e.penales.visita || [];
+  if(!e.campeon) e.campeon = {};
+  const c = e.campeon;
+  c.activo = !!c.activo;
+  c.equipo = c.equipo || 'local';
+  c.nombre = c.nombre || '';
+  if(c.texto === undefined) c.texto = '¡Felicidades campeón!';
 }
 normalizar();
 
@@ -177,6 +202,8 @@ function volcar(){
   $('gL').textContent = e.local.goles; $('gV').textContent = e.visita.goles;
   $('cuenta').value = e.tiempo.cuenta;
   pintarPen();
+  $('campTxt').value = e.campeon.texto; $('campNom').value = e.campeon.nombre;
+  pintarCamp();
 }
 function puntosPen(arr){
   const n = Math.max(5, e.penales.local.length, e.penales.visita.length);
@@ -198,14 +225,30 @@ function pintarPen(){
   $('penPL').innerHTML = puntosPen(p.local);
   $('penPV').innerHTML = puntosPen(p.visita);
 }
+function pintarCamp(){
+  const c = e.campeon;
+  $('campToggle').textContent = c.activo ? 'Mensaje de campeón: MOSTRANDO (pulsa para ocultar)' : 'Mostrar mensaje de campeón';
+  $('campToggle').classList.toggle('activo', c.activo);
+  $('campEq').options[0].textContent = 'Local: ' + e.local.nombre;
+  $('campEq').options[1].textContent = 'Visita: ' + e.visita.nombre;
+  $('campEq').value = c.equipo;
+  $('campOtroBox').hidden = c.equipo !== 'otro';
+}
+function ganadorAuto(){
+  const gl = e.local.goles, gv = e.visita.goles;
+  if(gl !== gv) return gl > gv ? 'local' : 'visita';
+  const pl = e.penales.local.filter(x=>x==='G').length, pv = e.penales.visita.filter(x=>x==='G').length;
+  if(pl !== pv) return pl > pv ? 'local' : 'visita';
+  return e.campeon.equipo;
+}
 volcar();
 fetch(DB).then(r=>r.json()).then(j=>{ if(j){ e=j; normalizar(); volcar(); } else { guardar(); } }).catch(()=>{});
 
 // Texto y color: se aplican al escribir
 $('torneo').oninput = ev => { e.torneo = ev.target.value; guardar(); };
 $('fase').oninput   = ev => { e.fase = ev.target.value; guardar(); };
-$('nL').oninput = ev => { e.local.nombre = ev.target.value; pintarPen(); guardar(); };
-$('nV').oninput = ev => { e.visita.nombre = ev.target.value; pintarPen(); guardar(); };
+$('nL').oninput = ev => { e.local.nombre = ev.target.value; pintarPen(); pintarCamp(); guardar(); };
+$('nV').oninput = ev => { e.visita.nombre = ev.target.value; pintarPen(); pintarCamp(); guardar(); };
 $('cL').oninput = ev => { e.local.color = ev.target.value; guardar(); };
 $('cV').oninput = ev => { e.visita.color = ev.target.value; guardar(); };
 document.querySelectorAll('#rapidosFase button').forEach(b => b.onclick = () => { e.fase = b.dataset.f; $('fase').value = e.fase; guardar(); });
@@ -218,8 +261,19 @@ $('ceroGoles').onclick = () => { e.local.goles = 0; e.visita.goles = 0; volcar()
 $('cambiar').onclick = () => {
   [e.local, e.visita] = [e.visita, e.local];
   [e.penales.local, e.penales.visita] = [e.penales.visita, e.penales.local];
+  if(e.campeon.equipo !== 'otro') e.campeon.equipo = e.campeon.equipo === 'local' ? 'visita' : 'local';
   volcar(); guardar();
 };
+
+// Campeón
+$('campToggle').onclick = () => {
+  e.campeon.activo = !e.campeon.activo;
+  if(e.campeon.activo && e.campeon.equipo !== 'otro') e.campeon.equipo = ganadorAuto();
+  pintarCamp(); guardar();
+};
+$('campEq').onchange = ev => { e.campeon.equipo = ev.target.value; pintarCamp(); guardar(); };
+$('campNom').oninput = ev => { e.campeon.nombre = ev.target.value; guardar(); };
+$('campTxt').oninput = ev => { e.campeon.texto = ev.target.value; guardar(); };
 
 // Penales
 $('penToggle').onclick = () => {
