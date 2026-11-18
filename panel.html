@@ -41,6 +41,7 @@
 </style>
 </head>
 <body>
+<div id="red" class="mini" style="margin:0 0 8px;font-weight:700">● Conectando…</div>
 
 <section>
   <h2>Torneo y tiempo de juego</h2>
@@ -191,9 +192,17 @@ function normalizar(){
 }
 normalizar();
 
+function red(ok, txt){
+  const s = $('red'); if(!s) return;
+  s.textContent = ok ? '● Conectado' : '● Sin conexión con la base de datos' + (txt ? ' (' + txt + ')' : '');
+  s.style.color = ok ? '#2ecc40' : '#ff4d44';
+}
 function guardar(){
-  localStorage.setItem(CLAVE, JSON.stringify(e));
-  fetch(DB, {method:'PUT', body:JSON.stringify(e)}).catch(()=>{});
+  // Algunos navegadores (modo privado, navegador interno de WhatsApp/Facebook) bloquean localStorage
+  try{ localStorage.setItem(CLAVE, JSON.stringify(e)); }catch(_){}
+  fetch(DB, {method:'PUT', body:JSON.stringify(e)})
+    .then(r => red(r.ok, r.ok ? '' : 'error ' + r.status))
+    .catch(() => red(false, 'revisa tu internet'));
 }
 
 function segundos(){
@@ -260,7 +269,9 @@ function ganadorAuto(){
   return e.campeon.equipo;
 }
 volcar();
-fetch(DB).then(r=>r.json()).then(j=>{ if(j){ e=j; normalizar(); volcar(); } else { guardar(); } }).catch(()=>{});
+fetch(DB).then(r=>{ red(r.ok, r.ok ? '' : 'error ' + r.status); return r.json(); })
+  .then(j=>{ if(j && !j.error){ e=j; normalizar(); volcar(); } else if(!j){ guardar(); } })
+  .catch(()=>red(false,'revisa tu internet'));
 
 // Texto y color: se aplican al escribir
 $('torneo').oninput = ev => { e.torneo = ev.target.value; guardar(); };
